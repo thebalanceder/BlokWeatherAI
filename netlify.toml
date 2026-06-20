@@ -1,0 +1,8 @@
+[build]
+  command = "cd dashboard && npm ci && npm run build"
+  publish = "dashboard/out"
+
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
