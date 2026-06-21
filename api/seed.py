@@ -49,6 +49,7 @@ def seed():
 
     with open(SEED_SQL) as f:
         sql = f.read()
+    sql = sql.replace("CREATE TABLE weather (", "CREATE TABLE IF NOT EXISTS weather (")
     conn.executescript(sql)
     conn.close()
     print(f"Seeded {SEED_SQL} into {DB_PATH}")
