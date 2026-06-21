@@ -178,10 +178,31 @@ def events(limit: int = Query(50, ge=1, le=200)):
 
 @app.get("/api/robot-state")
 def robot_state():
+    waypoints_a = [
+        {"lat": 3.1157, "lon": 101.5915, "label": "Base"},
+        {"lat": 3.1165, "lon": 101.5920, "label": "Checkpoint A"},
+        {"lat": 3.1170, "lon": 101.5930, "label": "Zone B-1"},
+        {"lat": 3.1162, "lon": 101.5940, "label": "Zone B-2"},
+        {"lat": 3.1150, "lon": 101.5935, "label": "Zone C"},
+        {"lat": 3.1145, "lon": 101.5920, "label": "Return"},
+        {"lat": 3.1157, "lon": 101.5915, "label": "Base"},
+    ]
+    waypoints_b = [
+        {"lat": 3.1130, "lon": 101.5900, "label": "Base"},
+        {"lat": 3.1138, "lon": 101.5908, "label": "Sector D"},
+        {"lat": 3.1145, "lon": 101.5895, "label": "Sector E"},
+        {"lat": 3.1130, "lon": 101.5900, "label": "Base"},
+    ]
     return [
-        {"id": "NX-402-DELTA", "status": "online", "action": "Patrolling Zone B", "rpm": 2450, "lidar_gap": 85, "last_ping": "2s ago"},
-        {"id": "NX-405-SIGMA", "status": "warning", "action": "Returning to Base", "rpm": 1200, "lidar_gap": 25, "last_ping": "14s ago"},
-        {"id": "NX-410-OMEGA", "status": "offline", "action": "None", "rpm": 0, "lidar_gap": 0, "last_ping": "2h ago"},
+        {"id": "NX-402-DELTA", "status": "online", "action": "Patrolling Zone B", "rpm": 2450,
+         "lidar_gap": 85, "last_ping": "2s ago", "battery": 78,
+         "waypoints": waypoints_a, "current_wp": 2, "progress": 35},
+        {"id": "NX-405-SIGMA", "status": "warning", "action": "Returning to Base", "rpm": 1200,
+         "lidar_gap": 25, "last_ping": "14s ago", "battery": 34,
+         "waypoints": waypoints_b, "current_wp": 3, "progress": 72},
+        {"id": "NX-410-OMEGA", "status": "offline", "action": "None", "rpm": 0,
+         "lidar_gap": 0, "last_ping": "2h ago", "battery": 0,
+         "waypoints": waypoints_b, "current_wp": 0, "progress": 100},
     ]
 
 

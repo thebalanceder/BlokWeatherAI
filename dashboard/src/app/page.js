@@ -53,7 +53,7 @@ const TYPE_COLORS = {
   tip: "text-purple-600", analysis: "text-emerald-600", prediction: "text-indigo-600",
 };
 
-function MetricCard({ title, value, unit, trend, trendUp, status, icon: Icon, iconColor }) {
+function MetricCard({ title, value, unit, trend, trendUp, status, forecast, icon: Icon, iconColor }) {
   return (
     <div className="bg-white p-5 rounded-xl border border-[#E9ECEF] shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
       <div className="flex justify-between items-start">
@@ -71,9 +71,12 @@ function MetricCard({ title, value, unit, trend, trendUp, status, icon: Icon, ic
         ) : null}
       </div>
       <div className="mt-2 flex items-end justify-between">
-        <div className="flex items-baseline">
+        <div className="flex items-baseline gap-2">
           <span className="text-3xl font-semibold">{value ?? "--"}</span>
-          {unit && <span className="text-xl font-medium text-[#868E96] ml-1">{unit}</span>}
+          {unit && <span className="text-xl font-medium text-[#868E96] mr-2">{unit}</span>}
+          {forecast != null && (
+            <span className="text-sm text-gray-400 font-medium">forecast: {forecast}{unit}</span>
+          )}
         </div>
         {Icon && <Icon className={`text-3xl ${iconColor || "text-[#3B82F6]"}`} />}
       </div>
@@ -81,7 +84,7 @@ function MetricCard({ title, value, unit, trend, trendUp, status, icon: Icon, ic
   );
 }
 
-function MetricCards({ stats }) {
+function MetricCards({ stats, prediction }) {
   const t = stats?.latest?.temperature_c;
   const h = stats?.latest?.humidity_percent;
   const co = stats?.latest?.co_raw;
@@ -89,7 +92,7 @@ function MetricCards({ stats }) {
   const cl = stats?.latest?.co_level || "low";
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <MetricCard title="Temperature" value={t} unit="°C" />
+      <MetricCard title="Temperature" value={t} unit="°C" forecast={prediction?.predicted_temp} />
       <MetricCard title="Humidity" value={h} unit="%" />
       <MetricCard title="CO Level" value={co} unit="ppm"
         status={cl === "high" ? "danger" : cl === "medium" ? "warning" : "optimal"} />
@@ -232,8 +235,8 @@ function RobotTable({ robots }) {
   const [newRobot, setNewRobot] = useState({ id: "", action: "" });
 
   const exportCSV = () => {
-    const headers = "Robot ID,Status,Action,RPM,Lidar Gap,Last Ping\n";
-    const rows = (robots || []).map(r => `${r.id},${r.status},${r.action},${r.rpm},${r.lidar_gap}%,${r.last_ping}`).join("\n");
+    const headers = "Robot ID,Status,Action,RPM,Lidar Gap,Progress,Battery,Last Ping\n";
+    const rows = (robots || []).map(r => `${r.id},${r.status},${r.action},${r.rpm},${r.lidar_gap}%,${r.progress ?? 0}%,${r.battery ?? 0}%,${r.last_ping}`).join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -271,6 +274,8 @@ function RobotTable({ robots }) {
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Action</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider text-right">RPM</th>
+              <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Route</th>
+              <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Battery</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Obstacle Gap</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Last Ping</th>
             </tr>
@@ -284,6 +289,22 @@ function RobotTable({ robots }) {
                 </td>
                 <td className="px-6 py-4 text-xs font-medium">{r.action}</td>
                 <td className="px-6 py-4 text-xs text-right font-mono">{r.rpm?.toLocaleString()}</td>
+                <td className="px-6 py-4 text-xs">
+                  {r.progress != null ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-[#3B82F6]" style={{ width: `${r.progress}%` }} />
+                      </div>
+                      <span className="text-[10px] text-[#868E96]">{r.progress}%</span>
+                    </div>
+                  ) : "--"}
+                </td>
+                <td className="px-6 py-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`inline-block w-2 h-2 rounded-full ${(r.battery || 0) > 50 ? "bg-emerald-400" : (r.battery || 0) > 20 ? "bg-amber-400" : "bg-red-400"}`} />
+                    <span className="text-[10px] text-[#868E96]">{r.battery ?? "--"}%</span>
+                  </div>
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
                     <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -412,8 +433,8 @@ function FleetView({ robots }) {
   const [newRobot, setNewRobot] = useState({ id: "", action: "" });
 
   const exportCSV = () => {
-    const headers = "Robot ID,Status,Action,RPM,Lidar Gap,Last Ping\n";
-    const rows = filtered.map(r => `${r.id},${r.status},${r.action},${r.rpm},${r.lidar_gap}%,${r.last_ping}`).join("\n");
+    const headers = "Robot ID,Status,Action,RPM,Route Progress,Battery,Lidar Gap,Last Ping\n";
+    const rows = filtered.map(r => `${r.id},${r.status},${r.action},${r.rpm},${r.progress ?? 0}%,${r.battery ?? 0}%,${r.lidar_gap}%,${r.last_ping}`).join("\n");
     const blob = new Blob([headers + rows], { type: "text/csv" });
     const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -456,6 +477,8 @@ function FleetView({ robots }) {
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Action</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider text-right">RPM</th>
+              <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Route</th>
+              <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Battery</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Obstacle Gap</th>
               <th className="px-6 py-3 text-[11px] font-bold text-[#868E96] uppercase tracking-wider">Last Ping</th>
             </tr>
@@ -469,6 +492,20 @@ function FleetView({ robots }) {
                 </td>
                 <td className="px-6 py-4 text-xs font-medium">{r.action}</td>
                 <td className="px-6 py-4 text-xs text-right font-mono">{r.rpm?.toLocaleString()}</td>
+                <td className="px-6 py-4 text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-[#3B82F6]" style={{ width: `${r.progress || 0}%` }} />
+                    </div>
+                    <span className="text-[10px] text-[#868E96]">{r.progress || 0}%</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`inline-block w-2 h-2 rounded-full ${(r.battery || 0) > 50 ? "bg-emerald-400" : (r.battery || 0) > 20 ? "bg-amber-400" : "bg-red-400"}`} />
+                    <span className="text-[10px] text-[#868E96]">{r.battery ?? "--"}%</span>
+                  </div>
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
@@ -744,9 +781,9 @@ export default function Home() {
         <div className="p-4 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
           {activeNav === "overview" && (
             <>
-              <MetricCards stats={stats} />
+              <MetricCards stats={stats} prediction={prediction} />
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <LiveMap data={historyData} />
+                <LiveMap data={historyData} robots={robots} />
                 <AIInsights insights={insights} loading={false} />
               </div>
               <ChartsRow historyData={historyData} prediction={prediction} />
