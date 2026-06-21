@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: blokweather-api
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r api/requirements.txt
+    startCommand: python api/seed.py && uvicorn api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: WEATHER_DB_PATH
+        value: weather.db
+      - key: MODEL_DIR
+        value: models
+      - key: GROQ_API_KEY
+        sync: false

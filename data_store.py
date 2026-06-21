@@ -1,9 +1,10 @@
 import sqlite3
 import json
+import os
 import time
 from datetime import datetime, timezone
 
-DB_PATH = "/home/unix/test/mqtt_test/weather.db"
+DB_PATH = os.getenv("WEATHER_DB_PATH", "/home/unix/test/mqtt_test/weather.db")
 
 def get_conn():
     conn = sqlite3.connect(DB_PATH)

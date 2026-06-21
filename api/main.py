@@ -20,7 +20,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_DIR = "/home/unix/test/mqtt_test/models"
+MODEL_DIR = os.getenv("MODEL_DIR", "/home/unix/test/mqtt_test/models")
 LONG_MODEL_META = f"{MODEL_DIR}/long_term_meta.json"
 ONLINE_MODEL_PATH = f"{MODEL_DIR}/online_model.pkl"
 

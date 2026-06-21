@@ -6,7 +6,7 @@ import pickle
 import time
 from datetime import datetime, timezone
 
-MODEL_DIR = "/home/unix/test/mqtt_test/models"
+MODEL_DIR = os.getenv("MODEL_DIR", "/home/unix/test/mqtt_test/models")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 ONLINE_MODEL_PATH = f"{MODEL_DIR}/online_model.pkl"
